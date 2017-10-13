@@ -38,4 +38,24 @@ module.exports = function (app){
 		res.render("teste/index");
 	});
 	
+	app.get("/analises", function(req,res){
+		var api = new servicoClearSale();
+		api.GetReturnAnalysis();
+		res.render("teste/index");
+	});	
+	
+	
+	app.get("/pacotes", function(req,res){
+		var api = new servicoClearSale();
+		api.GetPackageStatus(1);
+		res.render("teste/index");
+	});	
+	
+	app.get("/status", function(req,res){
+		var api = new servicoClearSale();
+		api.GetOrderStatus(1);
+		res.render("teste/index");
+	});	
+	
+	
 }
