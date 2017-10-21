@@ -1,7 +1,9 @@
 var soap = require('soap');
 var moment = require('moment');
 var ip = require('ip');
+var parseString = require('xml2js').parseString;
 
+//https://github.com/vpulim/node-soap
 //Homologação
 //Web Service:
 //https://homologacao.clearsale.com.br/integracaov2/Service.asmx
@@ -19,11 +21,15 @@ var ip = require('ip');
 //Aplicação:
 //https://aplicacao.clearsale.com.br/Login.aspx
 
+
+
 var clearSaleAPI = function () {
 	this.url = "http://homologacao.clearsale.com.br/integracaov2/service.asmx?WSDL";
+	this.url2 = "https://homologacao.clearsale.com.br/integracaov2/ExtendedService.asmx";
 	this.entityCode = "A1232877-9D20-4281-B81C-9C9339BA2B10";
 };
 
+//Os campos comentados nao sao obrigatorios
 
 //Codigos de erro que podem ocorrer
 //codigo - descricao - reenviar (s/n)
@@ -92,10 +98,10 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra){
 	}
 	
 	var objetoBillingData = {
-		"ID": "", //Código do cliente
+		"ID": "1", //Código do cliente
 		"Type": "1", //Pessoa Física ou Jurídica (Lista de Tipos de Pessoa)
 		"LegalDocument1": dadosCliente.CPF, //CPF ou CNPJ
-		"LegalDocument2": "", //RG ou Inscrição Estadual
+		//"LegalDocument2": "", //RG ou Inscrição Estadual
 		"Name": dadosCliente.nome, //Nome do cliente
 		"BirthDate": moment(dadosCliente.aniversario).utc().toISOString(), //Data de Nascimento (yyyy-mm-ddThh:mm:ss)
 		"Email": dadosCliente.email, //Email
@@ -123,10 +129,10 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra){
 		
 	
 	var objetoShippingData = {
-		"ID": "", //Código do cliente
+		"ID": "1", //Código do cliente
 		"Type": "1", //Pessoa Física ou Jurídica (Lista de Tipos de Pessoa)
 		"LegalDocument1": dadosCliente.CPF, //CPF ou CNPJ
-		"LegalDocument2": "", //RG ou Inscrição Estadual
+		//"LegalDocument2": "", //RG ou Inscrição Estadual
 		"Name": dadosCliente.nome, //Nome do cliente
 		"BirthDate": moment(dadosCliente.aniversario).utc().toISOString(), //Data de Nascimento (yyyy-mm-ddThh:mm:ss)
 		"Email": dadosCliente.email, //
@@ -135,9 +141,7 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra){
 		"Phones" : objetoPhone
 	};
 	
-	var objetoPayment = {
-		"Payment": objetoDetalhesPagamento
-	};
+	
 	
 	//Tipo de Pagamento
 	//1 - Cartão de Crédito
@@ -166,38 +170,42 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra){
 	//7 - Aura
 	
 	var objetoDetalhesPagamento = {
-		"Sequential": "", //Sequência de realização do pagamento
+		//"Sequential": "", //Sequência de realização do pagamento
 		"Date": moment.utc().toISOString(), //Data do pagamento (yyyy-mm-ddThh:mm:ss)
-		"Amount": "", //Valor cobrado neste pagamento
-		"PaymentTypeID": "", //Tipo de Pagamento (Lista de Tipos de Pagamento)
-		"QtyInstallments": "", //Quantidade de Parcelas
-		"Interest": "", //Taxa de Juros
-		"InterestValue": "", //Valor dos Juros
-		"CardNumber": "", //Número do Cartão
-		"CardBin": "", //Número do BIN do Cartão
-		"CardEndNumber": "", //4 últimos digitos do número de cartão
-		"CardType": "", //Bandeira do Cartão (Lista de Bandeiras de Cartão)
-		"CardExpirationDate": "", //Data da Expiração
-		"Name": "", //Nome de Cobrança
-		"LegalDocument": "", //Documento da Pessoa de Cobrança
+		"Amount": "10", //Valor cobrado neste pagamento
+		"PaymentTypeID": "2", //Tipo de Pagamento (Lista de Tipos de Pagamento) (PODE SER 2 PARA BOLETO E 1 PARA CARTAO)
+		//"QtyInstallments": "", //Quantidade de Parcelas
+		//"Interest": "", //Taxa de Juros
+		//"InterestValue": "", //Valor dos Juros
+		//"CardNumber": "", //Número do Cartão
+		//"CardBin": "", //Número do BIN do Cartão
+		//"CardEndNumber": "", //4 últimos digitos do número de cartão
+		//"CardType": "", //Bandeira do Cartão (Lista de Bandeiras de Cartão)
+		//"CardExpirationDate": "", //Data da Expiração
+		//"Name": "", //Nome de Cobrança
+		//"LegalDocument": "", //Documento da Pessoa de Cobrança
 		"Address": objetoAddressPayment,
-		"Nsu": "", //Número identificador único de uma transação de cartão
-		"Currency": "BRL" //Código da moeda - (Tabela de ID da Moeda) BRL - 986 (PAGINA 36 MANUAL INTEGRACAO)
+		//"Nsu": "", //Número identificador único de uma transação de cartão
+		"Currency": "986" //Código da moeda - (Tabela de ID da Moeda) BRL - 986 (PAGINA 36 MANUAL INTEGRACAO)
 	};	
+	
+	var objetoPayment = {
+		"Payment": objetoDetalhesPagamento
+	};
 	
 	var objetoItems = [];
 	
 	//Gerar 1 para cada item do carrinho!
 	var objetoItem = {
-		"ID": "", //Código do Produto
-		"Name": "", //Nome do Produto
-		"ItemValue": "", //Valor Unitário
-		"Qty": "", //Quantidade
-		"Gift": "", //Presente
-		"CategoryID": "", //Código da Categoria do Produto
-		"CategoryName": "", //Nome da Categoria do Produto
+		"ID": "1", //Código do Produto
+		"Name": "bola", //Nome do Produto
+		"ItemValue": "10", //Valor Unitário
+		"Qty": "1", //Quantidade
+		//"Gift": "", //Presente
+		//"CategoryID": "", //Código da Categoria do Produto
+		//"CategoryName": "", //Nome da Categoria do Produto
 	};
-	objetoItems.push(objetoItem);
+	objetoItems.push({"Item": objetoItem});
 	
 	var objetoPurchaseInformationData = {
 		"LastDateInsertedMail": moment.utc().toISOString(), //Data da última alteração do e-mail. (yyyy-mm-ddThh:mm:ss)
@@ -245,34 +253,44 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra){
 	//5 - Lista de Aniversário
 	//6 - Lista de Chá Bar / Chá de Panela
 	
+	
+	var objetoSessionID = {
+		"SessionID": "1"
+	};
 	var ObjetoOrder = {
-		"FingerPrint.SessionID": "", //Identificador único da sessão do usuário
-		"ID": "", //Código do pedido
+		//Os campos comentados nao sao obrigatorios
+		"FingerPrint": objetoSessionID, //Identificador único da sessão do usuário
+		"ID": "1", //Código do pedido
 		"Date": moment.utc().toISOString(), //Data do pedido (yyyy-mm-ddThh:mm:ss)
 		"Email": dadosCliente.email, //Email do pedido
 		"B2B_B2C": "B2C", //Tipo do ecommerce
-		"ShippingPrice": "", //Valor do Frete
-		"TotalItems": "", //Valor do Itens
-		"TotalOrder": "", //Valor Total do Pedido
-		"QtyInstallments": "", //Quantidade de Parcelas
-		"DeliveryTimeCD": "", //Prazo de Entrega
-		"QtyItems": "", //	Quantidade de Itens
-		"QtyPaymentTypes": "", //Quantidade de Pagamentos
+		//"ShippingPrice": "", //Valor do Frete
+
+		//Creio que estes dois devem ter o mesmo valor	
+		"TotalItems": "10", //Valor do Itens
+		"TotalOrder": "10", //Valor Total do Pedido
+
+		"QtyInstallments": "1", //Quantidade de Parcelas
+		//"DeliveryTimeCD": "", //Prazo de Entrega
+		//"QtyItems": "", //	Quantidade de Itens
+		//"QtyPaymentTypes": "", //Quantidade de Pagamentos
+		
 		"IP": ip.address(), //IP do Pedido
-		"ShippingType": "", // ID do Tipo de entrega (Lista ID Tipo Entrega)
-		"Gift": "", // Identifica se o pedido é presente
-		"GiftMessage": "", // Mensagem de Presente
-		"Obs": "", //Observação do Pedido
+		//"ShippingType": "", // ID do Tipo de entrega (Lista ID Tipo Entrega)
+		//"Gift": "", // Identifica se o pedido é presente
+		//"GiftMessage": "", // Mensagem de Presente
+		//"Obs": "", //Observação do Pedido
+		
 		"Status": "0", //Status do Pedido (na entrada) (Lista de status (de entrada)
-		"Reanalise": "", //Marcação que indica se o pedido será reanalisado ou não (1 caso for, 0 caso não)
-		"SlaCustom": "", //SLA de análise
-		"Origin": "", //Origem do Pedido
-		"ReservationDate": "", //Data de reserva de Voo (yyyy-mm-ddThh:mm:ss)
-		"Country": "", //Nome do País (somente para pedidos de análise internacional)
-		"Nationality": "", //Nome da Nacionalidade(somente para pedidos de análise internacional)
-		"Product": "", //ID do produto (Lista de Produtos) //N (somente para pedidos de análise internacional ou clientes que utilizam mais produtos da ClearSale)
-		"ListTypeID": "", //ID do tipo de lista (Lista de Tipos de Lista) N (somente para clientes que possuem listas específicas)
-		"ListID": "", //ID da lista na loja
+		//"Reanalise": "", //Marcação que indica se o pedido será reanalisado ou não (1 caso for, 0 caso não)
+		//"SlaCustom": "", //SLA de análise
+		"Origin": "ON STORE", //Origem do Pedido
+		//"ReservationDate": "", //Data de reserva de Voo (yyyy-mm-ddThh:mm:ss)
+		//"Country": "", //Nome do País (somente para pedidos de análise internacional)
+		//"Nationality": "", //Nome da Nacionalidade(somente para pedidos de análise internacional)
+		//"Product": "", //ID do produto (Lista de Produtos) //N (somente para pedidos de análise internacional ou clientes que utilizam mais produtos da ClearSale)
+		//"ListTypeID": "", //ID do tipo de lista (Lista de Tipos de Lista) N (somente para clientes que possuem listas específicas)
+		//"ListID": "", //ID da lista na loja
 		"BillingData" : objetoBillingData,
 		"ShippingData": objetoShippingData,
 		"Payments": objetoPayment,
@@ -282,24 +300,48 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra){
 		//As seções Passangers e Connections somente são utilizadas em empresas de PASSAGENS AÉREAS, caso não necessite utilizar esse metodos, favor omitir no XML.
 		//Nao foram inseridos os nodes referentes a informacoes de hotel
 	};
-	var objetoCompras = {"Orders": ObjetoOrder};
+	var ObjetoOrders = {"Order": ObjetoOrder};
+	var objetoCompras = {"Orders": ObjetoOrders};
 	var dados = {"ClearSale": objetoCompras};
-	console.log(dados);
+	//console.log(dados);
 	var args = {
 		"entityCode": this.entityCode,
 		"xml": dados
-		
 	}
 	
-	soap.createClient(this.url, function(err, client) {
+	var soapOptions = {
+		forceSoap12Headers: true,
+		connection: 'keep-alive',
+		suppressStack: true,
+		returnFault: true
+	};
+	
+	soap.createClient(this.url, soapOptions, function(err, client) {
+		//console.log(client);
     //client.SendOrders(this.entityCode, dados, function(err, result) {
-	client.SendOrders(args, function(err, result) {
+	client.SendOrders(args, function(err, result, body) {
+		//Validar o XML gerado
+		//console.log('body');
+		//console.log(body);
+		console.log(client.lastRequest);
+		//console.log(client.lastResponse);
 		if (err){
-			console.log('erro');
-			console.log(err);
+			//console.log(err);
+			console.log('erro 1');
+			console.log(err.code);
+			console.log(err.body);
+			console.log(err.message);
+			console.log(err.stack);
+			//console.log(err.response);
+			//console.log(err.body);
+			
+			client.describe();
+			return;
+			//console.log(err);
 		}
-		console.log('sucesso');
-        console.log(result);
+		
+		console.log('sucesso 1');
+        //console.log(result);
 		
 		});
 	});
@@ -308,11 +350,22 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra){
 
 //Este método é de uso obrigatório, utilizado para recuperar os status dos pedidos/propostas que ainda não foram processados. O método retorna os últimos 500 pedidos/propostas que foram finalizados e ainda não foram processados.
 clearSaleAPI.prototype.GetReturnAnalysis = function(){
-	soap.createClient(this.url, function(err, client) {
-    client.GetReturnAnalysis(this.entityCode, function(err, result) {
+	var soapOptions = {
+		forceSoap12Headers: true,
+		connection: 'keep-alive',
+		suppressStack: true,
+		returnFault: true
+	};
+	var args = {
+		"entityCode": this.entityCode,
+	}
+	
+	soap.createClient(this.url, soapOptions,function(err, client) {
+	client.GetReturnAnalysis(args, function(err, result) {
+		console.log(client.lastRequest);
 		if (err){
 			console.log('erro');
-			console.log(err);
+			//console.log(err);
 		}
 		console.log('sucesso');
         console.log(result);
@@ -323,8 +376,13 @@ clearSaleAPI.prototype.GetReturnAnalysis = function(){
 
 //Após o processamento do pedido/proposta, deve ser informado a ClearSale o código do pedido/proposta através do método SetOrderAsReturned, visando que esse pedido/proposta não retorne mais no método GetReturnAnalysis, afinal ele já foi processado.
 clearSaleAPI.prototype.SetOrderAsReturned = function(transacao){
+	var args = {
+		"entityCode": this.entityCode,
+		"orderID":transacao
+	}
+	
 	soap.createClient(this.url, function(err, client) {
-    client.SetOrderAsReturned(this.entityCode, transacao, function(err, result) {
+    client.SetOrderAsReturned(args, function(err, result) {
 		if (err){
 			console.log('erro');
 			console.log(err);
@@ -338,6 +396,7 @@ clearSaleAPI.prototype.SetOrderAsReturned = function(transacao){
 
 //Este método tem o mesmo comportamento do SetOrderAsReturned, porém, aceita uma lista de até 500 pedidos/propostas para serem informados como processados (não retornando mais no método GetReturnAnalysis).
 clearSaleAPI.prototype.SetOrderListAsReturned = function(xml){
+	
 	//O xml deve ter o seguinte formato:
 	//<?xml version="1.0" encoding="utf-16"?>
 	//<ArrayOfOrder>
@@ -346,8 +405,14 @@ clearSaleAPI.prototype.SetOrderListAsReturned = function(xml){
 	//</Order>
 	//(....)
 	//</ArrayOfOrder>
+	
+	var args = {
+		"entityCode": this.entityCode,
+		"xml":xml
+	}
+	
 	soap.createClient(this.url, function(err, client) {
-    client.SetOrderListAsReturned(this.entityCode, transacao, function(err, result) {
+    client.SetOrderListAsReturned(args, function(err, result) {
 		if (err){
 			console.log('erro');
 			console.log(err);
@@ -362,8 +427,14 @@ clearSaleAPI.prototype.SetOrderListAsReturned = function(xml){
 
 //Este método é de uso opcional, utilizado para recuperar o status atual dos pedidos no ClearSale, enviados em um pacote de pedidos. Sendo assim, será possível recuperar o status de todos os pedidos de um determinado pacote através do TransactionID.
 clearSaleAPI.prototype.GetPackageStatus = function(packageID){
+	
+	var args = {
+		"entityCode": this.entityCode,
+		"packageID":packageID
+	}
+	
 	soap.createClient(this.url, function(err, client) {
-    client.GetPackageStatus(this.entityCode, packageID, function(err, result) {
+    client.GetPackageStatus(args, function(err, result) {
 		if (err){
 			console.log('erro');
 			console.log(err);
@@ -377,14 +448,23 @@ clearSaleAPI.prototype.GetPackageStatus = function(packageID){
 
 //Este método é de uso opcional, utilizado para recuperar o status atual dos pedidos no Clear Sale passando pedido a pedido.
 clearSaleAPI.prototype.GetOrderStatus = function(orderID){
+	var args = {
+		"entityCode": this.entityCode,
+		"orderID":orderID
+	}
 	soap.createClient(this.url, function(err, client) {
-    client.GetOrderStatus(this.entityCode, orderID, function(err, result) {
-		if (err){
-			console.log('erro');
-			console.log(err);
-		}
-		console.log('sucesso');
-        console.log(result);
+		client.GetOrderStatus(args, function(err, result) {
+			if (err){
+				console.log('erro');
+				console.log(err);
+			}
+			console.log('sucesso');
+			//console.log(result);
+			
+			//convertendo a string XML em JSON
+			parseString(result.GetOrderStatusResult, function (err, result) {
+				console.dir(JSON.stringify(result));
+			});
 		
 		});
 	});
@@ -400,9 +480,14 @@ clearSaleAPI.prototype.GetOrderSStatus = function(xml){
 	//</Order>
 	//</Orders>
 	//</ClearSale>
+	
+	var args = {
+		"entityCode": this.entityCode,
+		"xml":xml
+	}
 
 	soap.createClient(this.url, function(err, client) {
-    client.GetOrderSStatus(this.entityCode, xml, function(err, result) {
+    client.GetOrderSStatus(args, function(err, result) {
 		if (err){
 			console.log('erro');
 			console.log(err);
@@ -415,12 +500,19 @@ clearSaleAPI.prototype.GetOrderSStatus = function(xml){
 }
 
 //Este método é utilizado para recuperar os comentários dos analistas inclusos nos pedidos.
-clearSaleAPI.prototype.GetAnalystComments = function(){
+clearSaleAPI.prototype.GetAnalystComments = function(order){
 	//getAll: No parâmetro getAll o valor que deve ser inserido será : True ou False.
 	//True quando desejar retornar todos os comentários inseridos no pedido.
 	//False quando desejar retornar apenas o último comentário inserido no pedido.
+	
+	var args = {
+		"entityCode": this.entityCode,
+		"orderID":order,
+		"getAll": true
+	}
+	
 	soap.createClient(this.url, function(err, client) {
-    client.GetAnalystComments(this.entityCode, OrderID, getAll, function(err, result) {
+    client.GetAnalystComments(args, function(err, result) {
 		if (err){
 			console.log('erro');
 			console.log(err);
@@ -443,8 +535,17 @@ clearSaleAPI.prototype.UpdateOrderStatus = function(orderId, newStatusId, obs){
 	//26 PAGAMENTO APROVADO
 	//27 PAGAMENTO REPROVADO
 	//obs: Observação do novo status do pedido/proposta, este campo é opcional e tem como tamanho máximo 50 caracteres
-	soap.UpdateOrderStatus(this.url, function(err, client) {
-    client.GetAnalystComments(this.entityCode, orderId, newStatusId, obs, function(err, result) {
+	
+	var args = {
+		"entityCode": this.entityCode,
+		"orderID":orderId,
+		"newStatusId": newStatusId,
+		"obs":obs
+	}
+	
+	
+	soap.createClient(this.url2, function(err, client) {
+    client.UpdateOrderStatus(args, function(err, result) {
 		if (err){
 			console.log('erro');
 			console.log(err);
@@ -467,6 +568,12 @@ clearSaleAPI.prototype.OrderChargeBack = function(Conteudo, Obs){
 	//</Orders>
 	//</ClearSale>
 	//Obs: Observações adicionais, este campo é opcional e tem como tamanho máximo 50 caracteres.
+	
+	var args = {
+		"entityCode": this.entityCode,
+		"Xml":Conteudo,
+		"Note": Obs,
+	}
 
 	soap.UpdateOrderStatus(this.url, function(err, client) {
     client.GetAnalystComments(this.entityCode, Conteudo, Obs, function(err, result) {

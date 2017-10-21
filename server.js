@@ -1,10 +1,12 @@
 var cookieParser = require("cookie-parser");
 var bodyParser  = require("body-parser");
+require('body-parser-xml')(bodyParser);
 var express    =    require('express');
 var session = require('express-session');
 var app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({extended: true}));
+app.use(bodyParser.xml());
 app.use(cookieParser()); 
 app.use(session({secret: 'ssshhhhh', resave: true, saveUninitialized: true}));
 app.use(express.static(__dirname + '/public'));

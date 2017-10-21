@@ -57,5 +57,13 @@ module.exports = function (app){
 		res.render("teste/index");
 	});	
 	
+	app.get("/comentarios", function(req,res){
+		var api = new servicoClearSale();
+		api.GetAnalystComments(1);
+		res.render("teste/index");
+	});	
+	
+	
+	
 	
 }
