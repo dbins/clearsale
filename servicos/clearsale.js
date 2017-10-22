@@ -1,7 +1,11 @@
 var soap = require('soap');
+var soap2 = require('strong-soap').soap;
+//https://loopback.io/doc/en/lb3/Strong-soap.html
 var moment = require('moment');
 var ip = require('ip');
 var parseString = require('xml2js').parseString;
+var xml2js = require('xml2js');
+
 
 //https://github.com/vpulim/node-soap
 //Homologação
@@ -42,7 +46,7 @@ var clearSaleAPI = function () {
 //06 - Erro no Plugin de Entrada - S
 //07 - Erro no Plugin de Saída - N
 
-clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra){
+clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra, fingerprint, dados_pedido){
 	var resposta = "";
 	
 	//Tipos de Telefone
@@ -196,16 +200,18 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra){
 	var objetoItems = [];
 	
 	//Gerar 1 para cada item do carrinho!
-	var objetoItem = {
-		"ID": "1", //Código do Produto
-		"Name": "bola", //Nome do Produto
-		"ItemValue": "10", //Valor Unitário
-		"Qty": "1", //Quantidade
-		//"Gift": "", //Presente
-		//"CategoryID": "", //Código da Categoria do Produto
-		//"CategoryName": "", //Nome da Categoria do Produto
-	};
-	objetoItems.push({"Item": objetoItem});
+	for (index = 0; index < dadosCompra.length; ++index) {
+		var objetoItem = {
+			"ID": dadosCompra[index].slug, //Código do Produto
+			"Name": dadosCompra[index].product, //Nome do Produto
+			"ItemValue": dadosCompra[index].total_price, //Valor Unitário
+			"Qty": dadosCompra[index].quantity, //Quantidade
+			//"Gift": "", //Presente
+			//"CategoryID": "", //Código da Categoria do Produto
+			//"CategoryName": "", //Nome da Categoria do Produto
+		};
+		objetoItems.push({"Item": objetoItem});
+	}
 	
 	var objetoPurchaseInformationData = {
 		"LastDateInsertedMail": moment.utc().toISOString(), //Data da última alteração do e-mail. (yyyy-mm-ddThh:mm:ss)
@@ -255,12 +261,12 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra){
 	
 	
 	var objetoSessionID = {
-		"SessionID": "1"
+		"SessionID": fingerprint
 	};
 	var ObjetoOrder = {
 		//Os campos comentados nao sao obrigatorios
 		"FingerPrint": objetoSessionID, //Identificador único da sessão do usuário
-		"ID": "1", //Código do pedido
+		"ID": dados_pedido.numero_pedido, //Código do pedido
 		"Date": moment.utc().toISOString(), //Data do pedido (yyyy-mm-ddThh:mm:ss)
 		"Email": dadosCliente.email, //Email do pedido
 		"B2B_B2C": "B2C", //Tipo do ecommerce
@@ -300,50 +306,135 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra){
 		//As seções Passangers e Connections somente são utilizadas em empresas de PASSAGENS AÉREAS, caso não necessite utilizar esse metodos, favor omitir no XML.
 		//Nao foram inseridos os nodes referentes a informacoes de hotel
 	};
+	
 	var ObjetoOrders = {"Order": ObjetoOrder};
 	var objetoCompras = {"Orders": ObjetoOrders};
 	var dados = {"ClearSale": objetoCompras};
 	//console.log(dados);
+	
+	var xmlValues = new xml2js.Builder({headless : true});
+	convertedObjects = xmlValues.buildObject(dados);
+	var tmp_xml = convertedObjects;
+	
 	var args = {
 		"entityCode": this.entityCode,
-		"xml": dados
+		"xml": tmp_xml
 	}
 	
 	var soapOptions = {
-		forceSoap12Headers: true,
-		connection: 'keep-alive',
-		suppressStack: true,
-		returnFault: true
+		forceSoap12Headers: true
+		//connection: 'keep-alive',
+		///suppressStack: true,
+		//returnFault: false
 	};
 	
-	soap.createClient(this.url, soapOptions, function(err, client) {
+	//var soapHeaders = {
+	//	'wsa:Action': 'https://homologacao.clearsale.com.br/integracaov2/Service.asmx?op=SendOrders',
+	//	'wsa:To': 'https://homologacao.clearsale.com.br/integracaov2/Service.asmx'
+	//};
+	
+	soap2.createClient(this.url, soapOptions, function(err, client) {
 		//console.log(client);
-    //client.SendOrders(this.entityCode, dados, function(err, result) {
-	client.SendOrders(args, function(err, result, body) {
+		if (err){
+			console.log('erro ao criar cliente');
+		}	
+		// client.addSoapHeader(soapHeaders);
+		//client.setSecurity(new soap.BasicAuthSecurity('username', 'password'));
+		//console.log(client);
+    //client.addHttpHeader('Content-Type', 'text/xml');
+	client.SendOrders(args, function(err, result, body,soapHeader) {
 		//Validar o XML gerado
 		//console.log('body');
 		//console.log(body);
-		console.log(client.lastRequest);
+		//console.log(client.lastRequest);
 		//console.log(client.lastResponse);
 		if (err){
 			//console.log(err);
 			console.log('erro 1');
 			console.log(err.code);
-			console.log(err.body);
+			//console.log(err.body);
 			console.log(err.message);
 			console.log(err.stack);
 			//console.log(err.response);
 			//console.log(err.body);
-			
-			client.describe();
-			return;
+			//console.log(soapHeader)
+			//return;
 			//console.log(err);
+			return;
 		}
-		
+		//client.describe();
 		console.log('sucesso 1');
+		//console.log(client.lastResponse);
         //console.log(result);
+		//console.log(result);
+		
+		//StatusCode de retorno	
+		//Código Descrição Reenviar
+		//00 Transação Concluída N
+		//01 Usuário Inexistente N
+		//02 Erro na validação do XML S
+		//03 Erro ao transformar XML S
+		//04 Erro Inesperado S
+		//05 Pedido já enviado ou não está em reanalise S
+		//06 Erro no Plugin de Entrada S
+		//07 Erro no Plugin de Saída N
+		
+		//convertendo a string XML em JSON
+		parseString(result.SendOrdersResult, function (err, result) {
+			console.log(result);
+			//var resultados = JSON.stringify(result);
+			var resultados = result;
+			
+			//Esses dados sao do PACOTE, que pode ter de 1 a 10 transacoes
+			console.log(resultados.PackageStatus.TransactionID[0]);  //IMPORTANTE
+			console.log(resultados.PackageStatus.StatusCode[0]); //IMPORTANTE
+			console.log(resultados.PackageStatus.Message[0]);
+			//Reenviar quando o StatusCode for 2, 3, 4, 5 e 6
+			//Pegar o ID do pacote de transacao na ClearSale
+			
+			
+			
+			//Consultar o retorno 
+			//A consulta do retorno de status deve ser realizada para os pedidos que foram integrados no ClearSale, através do método SendOrders, e tiverem o status informado na TAG <Status> do XML de retorno como AMA (Análise Manual) ou NVO (Novo).
+			
+			//Status da Compra
+			//APA - (Aprovação Automática) – Pedido foi aprovado automaticamente segundo parâmetros definidos na regra de aprovação automática.
+			//APM - (Aprovação Manual) – Pedido aprovado manualmente por tomada de decisão de um analista.
+			//RPM - (Reprovado Sem Suspeita) – Pedido Reprovado sem Suspeita por falta de contato com o cliente dentro do período acordado e/ou políticas restritivas de CPF (Irregular, SUS ou Cancelados).
+			//AMA - (Análise manual) – Pedido está em fila para análise
+			//ERR - (Erro) - Ocorreu um erro na integração do pedido, sendo necessário analisar um possível erro no XML enviado e após a correção reenvia-lo.
+			//NVO - (Novo) – Pedido importado e não classificado Score pela analisadora (processo que roda o Score de cada pedido).
+			//SUS - (Suspensão Manual) – Pedido Suspenso por suspeita de fraude baseado no contato com o “cliente” ou ainda na base ClearSale.
+			//CAN - (Cancelado pelo Cliente) – Cancelado por solicitação do cliente ou duplicidade do pedido.
+			//FRD - (Fraude Confirmada) – Pedido imputado como Fraude Confirmada por contato com a administradora de cartão e/ou contato com titular do cartão ou CPF do cadastro que desconhecem a compra
+			
+			var orders = resultados.PackageStatus.Orders;
+			orders.forEach(function(order) { 
+					console.log(order);
+					var tmp_order = order.Order;
+					tmp_order.forEach(function(item) { 
+						console.log(item);
+						console.log(item.ID[0]); //ID DA TRANSACAO EM NOSSO SISTEMA
+						console.log(item.Status[0]);  //STATUS NO SISTEMA CLEARSALE
+						console.log(item.Score[0]); 
+				});
+			});
+			
+			
+			
+		});
+		
+		
 		
 		});
+		
+		client.on('response', function(envelope, message) {
+			console.log('testando...');
+			//console.log(envelope);
+			//console.log(message);
+			console.log(message.headers);
+		});
+		
 	});
 }
 
