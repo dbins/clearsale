@@ -210,8 +210,11 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra, fingerpr
 			//"CategoryID": "", //Código da Categoria do Produto
 			//"CategoryName": "", //Nome da Categoria do Produto
 		};
-		objetoItems.push({"Item": objetoItem});
+		//objetoItems.push({"Item": objetoItem});
+		objetoItems.push(objetoItem);
 	}
+	
+	var objetoItemNOVO = {"Item": objetoItems};
 	
 	var objetoPurchaseInformationData = {
 		"LastDateInsertedMail": moment.utc().toISOString(), //Data da última alteração do e-mail. (yyyy-mm-ddThh:mm:ss)
@@ -300,7 +303,7 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra, fingerpr
 		"BillingData" : objetoBillingData,
 		"ShippingData": objetoShippingData,
 		"Payments": objetoPayment,
-		"Items": objetoItems,
+		"Items": objetoItemNOVO,
 		"PurchaseInformationData": objetoPurchaseInformationData
 		
 		//As seções Passangers e Connections somente são utilizadas em empresas de PASSAGENS AÉREAS, caso não necessite utilizar esse metodos, favor omitir no XML.
@@ -408,19 +411,20 @@ clearSaleAPI.prototype.sendOrders = function(dadosCliente, dadosCompra, fingerpr
 			//CAN - (Cancelado pelo Cliente) – Cancelado por solicitação do cliente ou duplicidade do pedido.
 			//FRD - (Fraude Confirmada) – Pedido imputado como Fraude Confirmada por contato com a administradora de cartão e/ou contato com titular do cartão ou CPF do cadastro que desconhecem a compra
 			
-			var orders = resultados.PackageStatus.Orders;
-			orders.forEach(function(order) { 
-					console.log(order);
-					var tmp_order = order.Order;
-					tmp_order.forEach(function(item) { 
-						console.log(item);
-						console.log(item.ID[0]); //ID DA TRANSACAO EM NOSSO SISTEMA
-						console.log(item.Status[0]);  //STATUS NO SISTEMA CLEARSALE
-						console.log(item.Score[0]); 
+			//Se ocorrer algum erro este campo nao vai existir
+			if (resultados.PackageStatus.Orders){
+				var orders = resultados.PackageStatus.Orders;
+				orders.forEach(function(order) { 
+						console.log(order);
+						var tmp_order = order.Order;
+						tmp_order.forEach(function(item) { 
+							console.log(item);
+							console.log(item.ID[0]); //ID DA TRANSACAO EM NOSSO SISTEMA
+							console.log(item.Status[0]);  //STATUS NO SISTEMA CLEARSALE
+							console.log(item.Score[0]); 
+					});
 				});
-			});
-			
-			
+			}
 			
 		});
 		
