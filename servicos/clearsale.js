@@ -455,6 +455,7 @@ clearSaleAPI.prototype.GetReturnAnalysis = function(){
 		"entityCode": this.entityCode,
 	}
 	
+	console.log(args);
 	soap.createClient(this.url, soapOptions,function(err, client) {
 	client.GetReturnAnalysis(args, function(err, result) {
 		console.log(client.lastRequest);

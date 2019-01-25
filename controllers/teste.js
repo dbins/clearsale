@@ -101,7 +101,7 @@ module.exports = function (app){
 	
 	app.get("/status", function(req,res){
 		var api = new servicoClearSale();
-		api.GetOrderStatus(1);
+		api.GetOrderStatus(9);
 		res.render("teste/index");
 	});	
 	
